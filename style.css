@@ -1,0 +1,1162 @@
+/* ═══════════════════════════════════════════════════════
+   DESIGN TOKENS
+   Two worlds: the cold scroll world, the warm letter world.
+   Every colour decision serves one of those two registers.
+═══════════════════════════════════════════════════════ */
+:root {
+  /* ── Cold world (the scroll) ── */
+  --bg:            #090807;       /* barely warm black */
+  --fg:            #ebe6df;       /* warm white */
+  --fg-secondary:  #c8c0b4;       /* warm supporting copy */
+  --muted:         #787878;       /* contextual, mid-grey */
+  --whisper:       #484848;       /* asides, labels, quiet metadata */
+  --quiet:         #303030;       /* barely-there — dividers, dots */
+
+  /* ── Warm world (the letter) ── */
+  --paper:         #ede7da;       /* envelope body */
+  --paper-dark:    #d9cebd;       /* envelope interior, gradient low */
+  --warm-100:      #D4C4A8;       /* "Hi Raj," — the warmest tone */
+  --warm-200:      #B8A88A;       /* letter border, sign-off, question */
+  --warm-300:      #8C7A62;       /* very subtle — letter label */
+
+  /* ── Accent — one job only: the wax seal ── */
+  --seal:          #7A1515;
+  --accent:        #B91C1C;    /* red: caret, figuring-emphasis */
+
+  /* ── Status ── */
+  --status-green:  #22C55E;
+
+  /* ── Type ── */
+  --serif:         'Instrument Serif', Georgia, serif;
+  --mono:          'JetBrains Mono', 'Courier New', monospace;
+
+  /* ── Motion ── */
+  --ease:          cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in:       cubic-bezier(0.55, 0, 1, 0.45);
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--serif);
+  font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+body.is-locked {
+  overflow: hidden;
+}
+
+body:not(.is-locked) #main-content {
+  pointer-events: auto;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOM CURSOR
+═══════════════════════════════════════════════════════ */
+#cursor {
+  position: fixed;
+  width: 5px;
+  height: 5px;
+  background: var(--fg);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width 0.25s var(--ease),
+              height 0.25s var(--ease),
+              opacity 0.3s ease,
+              background 0.35s ease;
+  opacity: 0;
+  will-change: left, top;
+}
+
+body.cursor-ready #cursor  { opacity: 0.65; }
+
+body.cursor-hover #cursor {
+  width: 30px;
+  height: 30px;
+  opacity: 0.12;
+}
+
+body.cursor-envelope #cursor {
+  width: 22px;
+  height: 22px;
+  opacity: 0.18;
+  background: var(--warm-100);
+}
+
+@media (pointer: coarse) {
+  #cursor { display: none; }
+  body     { cursor: auto; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════════════════════ */
+.mono {
+  font-family: var(--mono);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+}
+
+/* Three distinct muted levels — not one grey for everything */
+.muted    { color: var(--muted); }
+.whisper  { color: var(--whisper); }
+
+/* ═══════════════════════════════════════════════════════
+   INTRO OVERLAY
+═══════════════════════════════════════════════════════ */
+#intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 8vw, 6rem);
+  text-align: center;
+  pointer-events: all;
+}
+
+#dm-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  opacity: 0;
+}
+
+#dm-to {
+  font-size: clamp(0.65rem, 1.6vw, 0.8rem);
+  color: var(--whisper);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: var(--mono);
+  font-weight: 300;
+}
+
+#dm-type-area {
+  font-size: clamp(1.4rem, 4vw, 2.25rem);
+  color: var(--fg);
+  min-height: 1.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#dm-typed {
+  font-family: var(--mono);
+  font-weight: 300;
+}
+
+/* Caret — red: the nervousness of not knowing what to type */
+.caret {
+  display: inline-block;
+  color: var(--accent);
+  font-size: inherit;
+  animation: blink 1.1s step-end infinite;
+  margin-left: 1px;
+  opacity: 1;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+#title-block {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(2rem, 5vh, 4rem);
+  padding: clamp(1.5rem, 5vw, 4rem);
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+}
+
+#title-main {
+  font-family: var(--serif);
+  font-size: clamp(2.75rem, 9vw, 6.5rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: var(--fg);
+}
+
+#title-sub {
+  font-size: clamp(0.875rem, 2.2vw, 1.05rem);
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.85;
+  opacity: 0;
+}
+
+#scroll-cue {
+  position: absolute;
+  bottom: clamp(1.5rem, 5vh, 3rem);
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+#scroll-cue.is-breathing {
+  animation: scroll-breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes scroll-breathe {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50%       { opacity: 0.85; transform: translateY(5px); }
+}
+
+#skip-intro-btn {
+  position: absolute;
+  bottom: clamp(1.5rem, 5vh, 3rem);
+  right: clamp(1.5rem, 5vw, 3rem);
+  background: none;
+  border: none;
+  color: var(--whisper);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.3s var(--ease);
+  font-family: var(--mono);
+  font-weight: 300;
+}
+
+#skip-intro-btn:hover { color: var(--muted); }
+
+/* ═══════════════════════════════════════════════════════
+   STATUS INDICATOR
+═══════════════════════════════════════════════════════ */
+#status-indicator {
+  position: fixed;
+  top: clamp(1rem, 3vh, 1.75rem);
+  right: clamp(1rem, 4vw, 2.5rem);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2em;
+  opacity: 0;
+  transition: opacity 0.8s var(--ease);
+  pointer-events: none;
+}
+
+#status-indicator.is-visible { opacity: 1; }
+
+.status-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--whisper);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--mono);
+  font-weight: 300;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--status-green);
+  animation: status-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 1; }
+}
+
+.status-value {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  line-height: 1;
+  font-family: var(--mono);
+  font-weight: 300;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════════════════ */
+#main-content {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#main-content.is-visible { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════
+   SCENES — base
+═══════════════════════════════════════════════════════ */
+.scene {
+  min-height: 70svh;           /* reduced from 100svh — content weight drives height */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(3rem, 8vh, 6rem) clamp(1.5rem, 10vw, 7rem);
+}
+
+.scene__inner {
+  width: 100%;
+  max-width: clamp(22rem, 46vw, 34rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.25rem, 3vh, 2rem);
+}
+
+/* ── Default scene text colour hierarchy ── */
+.scene__inner > p {
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  line-height: 1.85;
+  color: var(--fg);
+}
+
+.scene__inner > p.muted {
+  color: var(--muted);
+}
+
+/* ═══════════════════════════════════════════════════════
+   REVEAL ANIMATION
+═══════════════════════════════════════════════════════ */
+.reveal-up {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION 1 — INTRODUCTION
+   Three beat lines: large, confident, unhurried.
+   Supporting copy drops to fg-secondary — not muted,
+   still readable, just clearly supporting.
+═══════════════════════════════════════════════════════ */
+.scene--intro .scene__inner {
+  gap: clamp(0.5rem, 1.5vh, 0.85rem);
+}
+
+.beat-line {
+  font-size: clamp(2.4rem, 7vw, 4.5rem) !important;
+  line-height: 1.1 !important;
+  color: var(--fg) !important;
+  letter-spacing: -0.01em;
+}
+
+.internet-detail {
+  margin-top: clamp(1.5rem, 4vh, 2.5rem);
+  font-size: clamp(1.1rem, 2vw, 1.3rem) !important;
+  color: var(--fg-secondary) !important;
+  line-height: 1.85 !important;
+}
+
+/* First internet-detail that's .muted gets the same top margin */
+.internet-detail.muted {
+  margin-top: clamp(1.5rem, 4vh, 2.5rem);
+  color: var(--muted) !important;
+}
+
+.internet-detail + .internet-detail {
+  margin-top: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION 2 — THE EXPERIMENT
+   The question is the conceptual core of the whole site.
+   It gets the size it deserves.
+═══════════════════════════════════════════════════════ */
+.scene--experiment {
+  min-height: 80svh;
+}
+
+.experiment-question {
+  font-size: clamp(1.5rem, 4.2vw, 2.4rem) !important;  /* was 1.9rem — now earns its place */
+  font-style: italic;
+  line-height: 1.45 !important;
+  color: var(--fg) !important;
+  margin: clamp(0.75rem, 2vh, 1.5rem) 0;
+  letter-spacing: -0.01em;
+}
+
+/* Raj shortcut — quiet aside at the bottom of the experiment section */
+.raj-shortcut-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+  margin-top: clamp(2rem, 5vh, 3.5rem);
+  padding-top: clamp(1.5rem, 3vh, 2.5rem);
+  border-top: 1px solid var(--quiet);
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.raj-aside {
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem) !important;
+  color: var(--whisper) !important;
+  letter-spacing: 0.1em;
+  line-height: 1 !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION 3 — HEY INTERNET
+   Register shift — mono label signals a different audience.
+   Slightly less min-height — content is looser here.
+═══════════════════════════════════════════════════════ */
+.scene--internet {
+  min-height: 65svh;
+}
+
+.scene--internet .scene__inner {
+  max-width: clamp(22rem, 44vw, 32rem);
+}
+
+.internet-label {
+  font-size: clamp(0.65rem, 1.6vw, 0.78rem) !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--whisper) !important;
+  margin-bottom: clamp(0.5rem, 1.5vh, 1rem);
+  display: block;
+  font-family: var(--mono);
+  font-weight: 300;
+}
+
+/* "For Everyone Who Stayed." — serif, prominent, acknowledging */
+.internet-heading {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 4.5vw, 2.8rem) !important;
+  font-weight: 400;
+  line-height: 1.2 !important;
+  color: var(--fg) !important;
+  letter-spacing: -0.01em;
+  margin-bottom: clamp(0.75rem, 2vh, 1.25rem);
+}
+
+.internet-gap {
+  margin-top: clamp(1rem, 3vh, 1.75rem);
+  color: var(--fg-secondary) !important;   /* middle register — not muted, not full */
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION 4 — FIGURING THINGS OUT
+   Three-line poem. Left-aligned.
+   Middle line: red italic — conviction, not alarm.
+   Red = caret (nervous), figuring (conviction), seal (wax).
+═══════════════════════════════════════════════════════ */
+.scene--figuring {
+  justify-content: flex-start;
+  min-height: 60svh;
+}
+
+.figuring-inner {
+  gap: 0 !important;
+  max-width: clamp(20rem, 50vw, 38rem) !important;
+}
+
+.figuring-line {
+  font-size: clamp(1.65rem, 5.2vw, 3.2rem) !important;
+  line-height: 1.32 !important;
+}
+
+.figuring-muted {
+  color: var(--muted) !important;
+}
+
+/* The centre line — red conviction, italic. One of three red moments. */
+.figuring-emphasis {
+  color: var(--accent) !important;
+  font-style: italic;
+  font-size: clamp(1.65rem, 5.2vw, 3.2rem) !important;
+}
+
+.figuring-gap {
+  margin-top: clamp(1.5rem, 4vh, 2.5rem);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SHORTCUT LINK — used in experiment section
+═══════════════════════════════════════════════════════ */
+.shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-size: clamp(0.8rem, 2vw, 0.92rem);
+  color: var(--muted);
+  text-decoration: none;
+  position: relative;
+  width: fit-content;
+  padding-bottom: 2px;
+  cursor: none;
+  transition: color 0.3s var(--ease);
+}
+
+.shortcut::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--muted);
+  transition: width 0.4s var(--ease);
+}
+
+.shortcut:hover,
+.shortcut:focus-visible {
+  color: var(--fg-secondary);
+  outline: none;
+}
+
+.shortcut:hover::after,
+.shortcut:focus-visible::after {
+  width: 100%;
+}
+
+.shortcut:focus-visible {
+  outline: 1px solid var(--whisper);
+  outline-offset: 6px;
+}
+
+.shortcut-arrow {
+  display: inline-block;
+  transition: transform 0.35s var(--ease);
+}
+
+.shortcut:hover .shortcut-arrow,
+.shortcut:focus-visible .shortcut-arrow {
+  transform: translateX(5px);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION 5 — LETTER / ENVELOPE
+   Taller scene. Left-aligned. The envelope is the climax.
+═══════════════════════════════════════════════════════ */
+.scene--letter {
+  justify-content: flex-start;
+  min-height: 80svh;
+  align-items: flex-start;
+  padding-top: clamp(3rem, 8vh, 6rem);
+}
+
+.scene--letter .scene__inner {
+  max-width: clamp(22rem, 55vw, 40rem);
+  align-items: flex-start;
+  text-align: left;
+}
+
+#envelope-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(1.25rem, 3vh, 2rem);
+  opacity: 0;
+  transform: translateY(18px);
+  width: 100%;
+}
+
+#envelope {
+  width: clamp(240px, 60vw, 340px);
+  cursor: none;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  transition: transform 0.5s var(--ease), filter 0.5s var(--ease);
+  filter: drop-shadow(0 6px 24px rgba(0,0,0,0.5));
+}
+
+#envelope:focus-visible {
+  outline: 1px solid var(--whisper);
+  outline-offset: 12px;
+}
+
+#envelope:hover:not([aria-pressed="true"]) {
+  transform: translateY(-6px);
+  filter: drop-shadow(0 14px 36px rgba(0,0,0,0.6));
+}
+
+#envelope:hover:not([aria-pressed="true"]) .env-seal {
+  transform: translate(-50%, -20%) scale(1.08);
+  box-shadow: 0 4px 20px rgba(122,21,21,0.45);
+}
+
+.env-body {
+  background: var(--paper);
+  width: 100%;
+  aspect-ratio: 1.618 / 1;
+  position: relative;
+  perspective: 1400px;
+  overflow: hidden;
+  border-radius: 1px;
+}
+
+.env-flap-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  z-index: 5;
+  transition: transform 1.2s var(--ease);
+}
+
+.env-flap {
+  width: 100%;
+  height: 100%;
+  background: var(--paper);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  box-shadow: 0 2px 0 0 rgba(0,0,0,0.06);
+  transform-origin: top center;
+  backface-visibility: hidden;
+}
+
+/* Seal — deep crimson, inset shadow for wax depth. Only red on the site. */
+.env-seal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -20%);
+  width: clamp(34px, 9vw, 48px);
+  height: clamp(34px, 9vw, 48px);
+  background: var(--seal);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+  transition: opacity 0.45s var(--ease),
+              transform 0.45s var(--ease),
+              box-shadow 0.4s var(--ease);
+  box-shadow: 0 2px 8px rgba(122,21,21,0.35),
+              inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+.env-seal-letter {
+  font-family: var(--serif);
+  font-size: clamp(0.95rem, 2.6vw, 1.3rem);
+  color: #f0e4d0;
+  user-select: none;
+  line-height: 1;
+  font-style: italic;
+  opacity: 0.88;
+}
+
+.env-paper {
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 62%;
+  background: linear-gradient(to bottom, var(--paper), var(--paper-dark));
+  z-index: 2;
+  transform: translateY(100%);
+  transition: transform 0.95s var(--ease);
+  border-top: 1px solid rgba(0,0,0,0.04);
+}
+
+.env-body::before,
+.env-body::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  height: 1px;
+  width: 52%;
+  background: rgba(0,0,0,0.08);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.env-body::before {
+  left: 0;
+  transform-origin: bottom left;
+  transform: rotate(-28deg);
+}
+
+.env-body::after {
+  right: 0;
+  transform-origin: bottom right;
+  transform: rotate(28deg);
+}
+
+/* Open states */
+#envelope.is-opening .env-flap-wrapper {
+  transform: rotateX(-180deg);
+}
+
+#envelope.is-opening .env-seal {
+  opacity: 0;
+  transform: translate(-50%, -20%) scale(0.55);
+  transition-delay: 0.05s;
+}
+
+#envelope.is-opening .env-paper {
+  transform: translateY(-28%);
+  transition-delay: 0.55s;
+  transition-duration: 1s;
+}
+
+#envelope-wrapper.is-gone {
+  pointer-events: none;
+}
+
+#envelope-label {
+  font-size: clamp(0.62rem, 1.5vw, 0.72rem);
+  color: var(--whisper);
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+  font-family: var(--mono);
+  font-weight: 300;
+}
+
+#envelope-wrapper.label-visible #envelope-label {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION 6 — LETTER CONTENT
+   The warm world begins here. Everything shifts registers.
+   Background stays dark — but colour, border, and text
+   warmth signal "you have crossed a threshold."
+═══════════════════════════════════════════════════════ */
+#letter-content {
+  opacity: 0;
+  pointer-events: none;
+  width: 100%;
+  max-width: clamp(22rem, 50vw, 38rem);
+  text-align: left;
+  display: none;
+  /* Barely-there warm surface — signals "you've crossed into something different" */
+  background: linear-gradient(to bottom, rgba(212,196,168,0.025) 0%, transparent 40%);
+  border-radius: 2px;
+}
+
+#letter-content.is-revealed {
+  display: block;
+  pointer-events: auto;
+}
+
+/* Left border: warm-200 — the through-line from envelope to letter */
+.letter-body {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2.5vh, 1.5rem);
+  padding: clamp(2rem, 6vw, 3.5rem) 0;
+  padding-left: clamp(1.5rem, 4.5vw, 2.5rem);
+  border-left: 1px solid var(--warm-200);
+}
+
+.letter-opening {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  margin-bottom: clamp(1.5rem, 4vh, 2.75rem);
+}
+
+/* Size scale: big greeting → comfortable body. Bridge size on first paragraphs. */
+.letter-greeting {
+  font-size: clamp(1.5rem, 3.8vw, 2.2rem) !important;
+  line-height: 1.2 !important;
+  color: var(--fg-secondary);        /* greetings in fg-secondary — intimate, not stark */
+}
+
+/* "Hi Raj," — the warmest moment on the entire site */
+.letter-greeting:first-child {
+  color: var(--warm-100);
+  font-size: clamp(1.65rem, 4.2vw, 2.5rem) !important;
+  margin-bottom: clamp(0.75rem, 2vh, 1.25rem);
+}
+
+/* The three opening lines — body-sized, measured, not formal */
+.letter-greeting-body {
+  font-size: clamp(1.05rem, 2.4vw, 1.2rem) !important;
+  line-height: 1.85 !important;
+  color: var(--fg-secondary) !important;
+}
+
+/* Base letter body — slightly warmer than --fg */
+.letter-body p {
+  font-size: clamp(1.1rem, 2vw, 1.25rem);
+  line-height: 1.92;
+  color: var(--fg-secondary);
+}
+
+/* Bridge: first paragraph after opening — larger, in muted so the drop is gradual */
+.letter-opening + p {
+  font-size: clamp(1.18rem, 2.8vw, 1.38rem) !important;
+  color: var(--muted) !important;
+  line-height: 1.85 !important;
+}
+
+/* Second step down */
+.letter-opening + p + p {
+  font-size: clamp(1.1rem, 2.55vw, 1.28rem) !important;
+  color: var(--fg-secondary) !important;
+}
+
+/* The central question — warm-200, italic, breathing room, larger */
+.letter-question {
+  font-style: italic;
+  font-size: clamp(1.2rem, 2.9vw, 1.5rem) !important;
+  color: var(--warm-200) !important;   /* warm-200: the question glows slightly */
+  line-height: 1.65 !important;
+  margin: clamp(0.75rem, 2vh, 1.25rem) 0;
+  letter-spacing: 0.005em;
+}
+
+/* Email — natural, not a CTA. Just a way to continue the conversation. */
+.letter-email {
+  margin-top: clamp(0.25rem, 1vh, 0.5rem);
+}
+
+.letter-email-link {
+  font-family: var(--mono);
+  font-weight: 300;
+  font-size: clamp(0.78rem, 1.8vw, 0.88rem);
+  color: var(--warm-300);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: color 0.3s var(--ease);
+  border-bottom: 1px solid rgba(140, 122, 98, 0.3);
+  padding-bottom: 1px;
+}
+
+.letter-email-link:hover {
+  color: var(--warm-200);
+  border-bottom-color: rgba(184, 168, 138, 0.5);
+}
+
+/* Sign-off in warm-300 — the faintest warm tone, a quiet goodbye */
+.letter-sign {
+  color: var(--warm-300) !important;
+  margin-top: clamp(1.25rem, 3vh, 2rem);
+  font-style: italic;
+  font-size: clamp(1rem, 2.2vw, 1.1rem) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION 7 — CLOSING
+═══════════════════════════════════════════════════════ */
+.scene--closing {
+  min-height: 60svh;
+}
+
+.scene--closing .scene__inner > p {
+  color: var(--muted);                /* base — individual classes override */
+}
+
+/* "Either way, I thought the experiment was worth running." lifts slightly */
+.scene--closing .scene__inner > p.closing-gap {
+  color: var(--fg-secondary);
+  margin-top: clamp(2rem, 5vh, 3.5rem);
+}
+
+.closing-gap {
+  margin-top: clamp(2rem, 5vh, 3.5rem);
+}
+
+.closing-small {
+  font-size: clamp(0.95rem, 1.8vw, 1.05rem) !important;
+  color: var(--muted) !important;        /* up from whisper */
+  line-height: 1.85 !important;
+  margin-top: 0.4rem;
+  font-family: var(--mono);
+  font-weight: 300;
+  letter-spacing: 0.04em;
+}
+
+/* "Thank You." — the warmest, most prominent moment in the closing */
+.closing-thankyou {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 5.5vw, 3.5rem) !important;
+  font-weight: 400;
+  line-height: 1.1 !important;
+  color: var(--warm-100) !important;
+  letter-spacing: -0.01em;
+  margin-top: clamp(1.5rem, 4vh, 2.5rem);
+}
+
+/* "Maybe this..." / "Maybe it doesn't." — whisper level */
+.closing-maybe {
+  color: var(--muted) !important;        /* up from whisper — present, not invisible */
+  font-size: clamp(1.15rem, 2vw, 1.3rem) !important;
+  line-height: 1.85 !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CLOSING — considered, not dramatic
+═══════════════════════════════════════════════════════ */
+.scene--closing .scene__inner {
+  gap: clamp(0.85rem, 2vh, 1.35rem);
+}
+
+/* "The experiment is still running." — lifts a touch, signals it's open-ended */
+.closing-gap {
+  color: var(--fg-secondary) !important;
+  font-style: italic;
+  font-size: clamp(1.2rem, 2.2vw, 1.4rem) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SELECTION
+═══════════════════════════════════════════════════════ */
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* ═══════════════════════════════════════════════════════
+   REDUCED MOTION
+═══════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .reveal-up           { opacity: 1; transform: none; }
+  #envelope-wrapper    { opacity: 1; transform: none; }
+  .caret               { animation: none; }
+  .status-dot          { animation: none; opacity: 1; }
+  #scroll-cue          { animation: none; opacity: 0.55; }
+  #intro               { display: none; }
+  #status-indicator    { opacity: 1; }
+  #main-content        { opacity: 1; }
+  #title-block         { opacity: 0; display: none; }
+  body.is-locked       { overflow: auto; }
+  body                 { cursor: auto; }
+  #cursor              { display: none; }
+  .shortcut            { cursor: pointer; }
+  #envelope            { cursor: pointer; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  body { cursor: auto; }
+
+  .scene {
+    padding-left: clamp(1.25rem, 6vw, 2.5rem);
+    padding-right: clamp(1.25rem, 6vw, 2.5rem);
+  }
+
+  .scene__inner          { max-width: 100%; }
+  .figuring-inner        { max-width: 100% !important; }
+  .scene--figuring       { justify-content: flex-start; }
+
+  #title-main {
+    font-size: clamp(2.5rem, 13vw, 3.75rem);
+    line-height: 1.08;
+  }
+
+  .beat-line {
+    font-size: clamp(2.1rem, 10vw, 3.2rem) !important;
+  }
+
+  .figuring-line,
+  .figuring-emphasis {
+    font-size: clamp(1.35rem, 6.5vw, 2rem) !important;
+  }
+
+  .experiment-question {
+    font-size: clamp(1.3rem, 5vw, 1.8rem) !important;
+  }
+
+  #envelope {
+    width: min(280px, 82vw);
+  }
+
+  #skip-intro-btn {
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  /* Scene heights — much tighter on mobile. Content drives height, not viewport. */
+  .scene {
+    min-height: 45svh;
+    padding: clamp(2.5rem, 6vh, 4rem) clamp(1.25rem, 6vw, 2.5rem);
+  }
+
+  .scene--experiment { min-height: 55svh; }
+  .scene--internet   { min-height: 40svh; }
+  .scene--figuring   { min-height: 40svh; }
+  .scene--letter     { min-height: 50svh; padding-top: clamp(2.5rem, 6vh, 4rem); }
+  .scene--closing    { min-height: 40svh; }
+
+  /* Fix 1: letter inner was clamp(22rem, 55vw, 40rem) — too narrow on small phones.
+     .scene--letter .scene__inner is more specific than .scene__inner so needs
+     its own mobile override. Desktop: completely unaffected. */
+  .scene--letter .scene__inner {
+    max-width: 100%;
+  }
+
+  /* Fix 2: closing-thankyou warm colour — explicit !important so base
+     .scene--closing p colour rule can't override it on mobile.
+     Desktop: existing rule already wins there, this changes nothing. */
+  .closing-thankyou {
+    color: var(--warm-100) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SEAL CRACK — SVG overlay, hidden until opening
+═══════════════════════════════════════════════════════ */
+/* DM envelope symbol inside the seal — embossed, not app-icon */
+.env-seal-dm {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LETTER PARAGRAPH REVEALS
+   Each paragraph fades in on scroll after the letter opens.
+   Initially hidden — JS applies scroll triggers post-open.
+═══════════════════════════════════════════════════════ */
+.letter-reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: none; /* JS handles this via GSAP */
+}
+
+.letter-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   FINAL POLISH PASS
+═══════════════════════════════════════════════════════ */
+
+/* Experiment question wrapper — gives the question breathing room
+   as its own visual moment, separate from the copy above and below */
+.experiment-question-wrapper {
+  padding: clamp(1.5rem, 4vh, 2.5rem) 0;
+  margin: clamp(0.25rem, 1vh, 0.5rem) 0;
+}
+
+/* Experiment question — the intellectual centre. Larger, more presence. */
+.experiment-question {
+  font-size: clamp(1.55rem, 4.5vw, 2.6rem) !important;
+  font-style: italic;
+  line-height: 1.4 !important;
+  color: var(--fg) !important;
+  letter-spacing: -0.015em;
+}
+
+/* Email postscript — understated, natural, not a CTA */
+.letter-postscript {
+  margin-top: clamp(0.25rem, 1vh, 0.5rem) !important;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  flex-wrap: wrap;
+}
+
+.letter-ps-label {
+  font-size: 0.7rem !important;
+  letter-spacing: 0.08em;
+  color: var(--warm-300) !important;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.letter-email-link {
+  color: var(--warm-200);
+  text-decoration: none;
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  font-family: var(--mono);
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  transition: color 0.3s var(--ease);
+  border-bottom: 1px solid rgba(184, 168, 138, 0.25);
+  padding-bottom: 1px;
+}
+
+.letter-email-link:hover {
+  color: var(--warm-100);
+  border-bottom-color: rgba(212, 196, 168, 0.5);
+}
+
+/* Closing — handled by .closing-maybe, .closing-thankyou, .closing-small classes */
+
+/* "The experiment is still running." — lifts to full muted */
+.scene--closing .scene__inner > p.closing-gap {
+  color: var(--fg-secondary) !important;
+  font-size: clamp(1.05rem, 2.4vw, 1.25rem) !important;
+}
+
+/* Figuring emphasis — ensure red is applied (belt + suspenders) */
+.figuring-emphasis {
+  color: var(--accent) !important;
+}
+
+/* Email line — standalone, after the closing statement */
+.letter-email-line {
+  margin-top: clamp(0.25rem, 1vh, 0.5rem) !important;
+}
+
+.letter-email-line .letter-email-link {
+  color: var(--warm-200);
+  text-decoration: none;
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  font-family: var(--mono);
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid rgba(184, 168, 138, 0.25);
+  padding-bottom: 1px;
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+.letter-email-line .letter-email-link:hover {
+  color: var(--warm-100);
+  border-bottom-color: rgba(212, 196, 168, 0.5);
+}
+
+/* "(the second one can be an email)" — quiet aside, mono, below the address */
+.letter-second-message {
+  font-size: clamp(0.7rem, 1.6vw, 0.78rem) !important;
+  color: var(--whisper) !important;
+  letter-spacing: 0.03em;
+  line-height: 1.6 !important;
+  margin-top: 0 !important;
+  font-family: var(--mono);
+  font-weight: 300;
+}
